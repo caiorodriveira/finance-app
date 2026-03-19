@@ -7,29 +7,49 @@ import { formatarMoeda } from '../services/financas';
 import { ReceitasRepo } from '../repositories';
 
 export default function ReceitasScreen() {
-  const { receitas, currentMonth, addReceita, loadData } = useAppStore();
+  const { receitas, currentMonth, addReceita, updateReceita, deleteReceita } = useAppStore();
   const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<Receita | null>(null);
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
   const [dataRecebimento, setDataRecebimento] = useState('');
 
   const resetForm = () => {
     setDescricao(''); setValor(''); setDataRecebimento('');
-    setShowForm(false);
+    setEditingItem(null); setShowForm(false);
   };
 
   const handleAdd = async () => {
     if (!descricao || !valor || !dataRecebimento) return;
-    const nova: Receita = {
-      id: generateId(),
-      descricao,
-      valor: parseFloat(valor),
-      tipo: 'receita',
-      data_recebimento: dataRecebimento,
-      mes_referencia: currentMonth,
-    };
-    await addReceita(nova);
+    
+    if (editingItem) {
+      const atualizada: Receita = {
+        ...editingItem,
+        descricao,
+        valor: parseFloat(valor),
+        data_recebimento: dataRecebimento,
+      };
+      await updateReceita(atualizada);
+    } else {
+      const nova: Receita = {
+        id: generateId(),
+        descricao,
+        valor: parseFloat(valor),
+        tipo: 'receita',
+        data_recebimento: dataRecebimento,
+        mes_referencia: currentMonth,
+      };
+      await addReceita(nova);
+    }
     resetForm();
+  };
+
+  const handleEdit = (item: Receita) => {
+    setEditingItem(item);
+    setDescricao(item.descricao);
+    setValor(item.valor.toString());
+    setDataRecebimento(item.data_recebimento);
+    setShowForm(true);
   };
 
   const handleDelete = (id: string) => {
@@ -39,8 +59,7 @@ export default function ReceitasScreen() {
         text: 'Remover',
         style: 'destructive',
         onPress: async () => {
-          await ReceitasRepo.delete(id);
-          await loadData();
+          await deleteReceita(id);
         },
       },
     ]);
@@ -55,9 +74,14 @@ export default function ReceitasScreen() {
         <Text style={styles.cardValor}>{formatarMoeda(item.valor)}</Text>
         <Text style={styles.cardDate}>Recebido: {item.data_recebimento}</Text>
       </View>
-      <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteBtn}>
-        <Text style={styles.deleteText}>🗑️</Text>
-      </TouchableOpacity>
+      <View style={styles.actions}>
+        <TouchableOpacity onPress={() => handleEdit(item)} style={styles.actionBtn}>
+          <Text style={styles.actionText}>✏️</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.actionBtn}>
+          <Text style={styles.actionText}>🗑️</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -78,7 +102,7 @@ export default function ReceitasScreen() {
       <Modal visible={showForm} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Nova Receita</Text>
+            <Text style={styles.modalTitle}>{editingItem ? 'Editar Receita' : 'Nova Receita'}</Text>
             <TextInput style={styles.input} placeholder="Descrição (ex: Salário)" value={descricao} onChangeText={setDescricao} />
             <TextInput style={styles.input} placeholder="Valor" keyboardType="numeric" value={valor} onChangeText={setValor} />
             <TextInput style={styles.input} placeholder="Data recebimento (DD/MM)" value={dataRecebimento} onChangeText={setDataRecebimento} />
@@ -127,8 +151,9 @@ const styles = StyleSheet.create({
   cardDesc: { fontSize: 15, fontWeight: '600', color: '#1e293b' },
   cardValor: { fontSize: 14, color: '#22c55e', marginVertical: 2, fontWeight: '500' },
   cardDate: { fontSize: 11, color: '#94a3b8' },
-  deleteBtn: { padding: 8 },
-  deleteText: { fontSize: 20 },
+  actions: { flexDirection: 'row', gap: 12 },
+  actionBtn: { padding: 8 },
+  actionText: { fontSize: 18 },
   emptyText: { textAlign: 'center', color: '#94a3b8', marginTop: 40, fontSize: 14 },
 
   // Modal

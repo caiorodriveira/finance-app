@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useAppStore } from '../store';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -18,7 +18,7 @@ import {
 } from '../services/financas';
 
 export default function DashboardScreen() {
-  const { receitas, despesas, cartoes, currentMonth, setCurrentMonth } = useAppStore();
+  const { receitas, despesas, cartoes, currentMonth, setCurrentMonth, replicateMonth } = useAppStore();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
 
@@ -40,6 +40,22 @@ export default function DashboardScreen() {
     const [year, month] = currentMonth.split('-').map(Number);
     const d = new Date(year, month, 1);
     setCurrentMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  };
+
+  const handleReplicate = () => {
+    Alert.alert(
+      'Replicar Mês',
+      `Deseja copiar todas as receitas e despesas de ${getNomeMes(currentMonth)} para o próximo mês?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Replicar', 
+          onPress: async () => {
+            await replicateMonth();
+          } 
+        }
+      ]
+    );
   };
 
   return (
@@ -99,6 +115,10 @@ export default function DashboardScreen() {
         <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Cartoes')}>
           <Text style={styles.actionIcon}>💳</Text>
           <Text style={styles.actionLabel}>Cartões</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton} onPress={handleReplicate}>
+          <Text style={styles.actionIcon}>🔄</Text>
+          <Text style={styles.actionLabel}>Replicar</Text>
         </TouchableOpacity>
       </View>
 
@@ -169,8 +189,8 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b', marginBottom: 12, marginTop: 4 },
   actionsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
   actionButton: {
-    width: '30%', backgroundColor: '#fff', paddingVertical: 20, borderRadius: 14,
-    alignItems: 'center', elevation: 2,
+    width: '23%', backgroundColor: '#f1f5f9', paddingVertical: 20, borderRadius: 14,
+    alignItems: 'center', elevation: 2
   },
   actionIcon: { fontSize: 28 },
   actionLabel: { fontWeight: '600', color: '#3b82f6', marginTop: 8, fontSize: 13 },

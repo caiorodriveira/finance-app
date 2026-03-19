@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Switch, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Switch, Modal, ScrollView, Alert } from 'react-native';
 import { useAppStore } from '../store';
 import { generateId } from '../utils/uuid';
 import { Despesa, CategoriaDespesa, FormaPagamento } from '../models/types';
@@ -13,8 +13,9 @@ const CATEGORIAS: { label: string; value: CategoriaDespesa }[] = [
 ];
 
 export default function DespesasScreen() {
-  const { despesas, cartoes, currentMonth, addDespesa, toggleDespesaPago } = useAppStore();
+  const { despesas, cartoes, currentMonth, addDespesa, updateDespesa, deleteDespesa, toggleDespesaPago } = useAppStore();
   const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<Despesa | null>(null);
   const [nome, setNome] = useState('');
   const [valor, setValor] = useState('');
   const [dataVencimento, setDataVencimento] = useState('');
@@ -25,24 +26,60 @@ export default function DespesasScreen() {
   const resetForm = () => {
     setNome(''); setValor(''); setDataVencimento('');
     setCategoria('outro'); setFormaPagamento('pagamento_direto');
-    setCartaoId(undefined); setShowForm(false);
+    setCartaoId(undefined); setEditingItem(null); setShowForm(false);
   };
 
   const handleAdd = async () => {
     if (!nome || !valor || !dataVencimento) return;
-    const nova: Despesa = {
-      id: generateId(),
+    
+    const dados: Partial<Despesa> = {
       nome,
       valor: parseFloat(valor),
       categoria,
       forma_pagamento: formaPagamento,
       cartao_id: formaPagamento === 'cartao' ? cartaoId : undefined,
-      pago: false,
       data_vencimento: dataVencimento,
-      mes_referencia: currentMonth,
     };
-    await addDespesa(nova);
+
+    if (editingItem) {
+      await updateDespesa({
+        ...editingItem,
+        ...dados as Despesa,
+      });
+    } else {
+      const nova: Despesa = {
+        ...dados as Despesa,
+        id: generateId(),
+        pago: false,
+        mes_referencia: currentMonth,
+      };
+      await addDespesa(nova);
+    }
     resetForm();
+  };
+
+  const handleEdit = (item: Despesa) => {
+    setEditingItem(item);
+    setNome(item.nome);
+    setValor(item.valor.toString());
+    setDataVencimento(item.data_vencimento);
+    setCategoria(item.categoria);
+    setFormaPagamento(item.forma_pagamento);
+    setCartaoId(item.cartao_id);
+    setShowForm(true);
+  };
+
+  const handleDelete = (id: string) => {
+    Alert.alert('Confirmar', 'Deseja remover esta despesa?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Remover',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteDespesa(id);
+        },
+      },
+    ]);
   };
 
   const faturas = getFaturasCartoes(despesas, cartoes);
@@ -50,7 +87,7 @@ export default function DespesasScreen() {
   const [faturaExpandida, setFaturaExpandida] = useState<string | null>(null);
 
   const toggleFatura = (cartaoId: string) => {
-    setFaturaExpandida(prev => prev === cartaoId ? null : cartaoId);
+    setFaturaExpandida((prev: string | null) => prev === cartaoId ? null : cartaoId);
   };
 
   const renderFaturaCard = (fatura: FaturaCartao) => {
@@ -109,12 +146,20 @@ export default function DespesasScreen() {
           <Text style={styles.cardDate}>Vence: {item.data_vencimento}</Text>
         </View>
         <View style={styles.statusCol}>
+          <View style={styles.actionsRow}>
+            <TouchableOpacity onPress={() => handleEdit(item)} style={styles.actionBtnRow}>
+              <Text style={styles.actionTextRow}>✏️</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.actionBtnRow}>
+              <Text style={styles.actionTextRow}>🗑️</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={[styles.statusText, { color: item.pago ? '#22c55e' : '#ef4444' }]}>
             {item.pago ? '✓ Pago' : '✗ Pendente'}
           </Text>
           <Switch
             value={item.pago}
-            onValueChange={(val) => toggleDespesaPago(item.id, val)}
+            onValueChange={(val: boolean) => toggleDespesaPago(item.id, val)}
             trackColor={{ false: '#e2e8f0', true: '#86efac' }}
             thumbColor={item.pago ? '#22c55e' : '#94a3b8'}
           />
@@ -151,7 +196,7 @@ export default function DespesasScreen() {
       <Modal visible={showForm} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Nova Despesa</Text>
+            <Text style={styles.modalTitle}>{editingItem ? 'Editar Despesa' : 'Nova Despesa'}</Text>
 
             <TextInput style={styles.input} placeholder="Nome da despesa" value={nome} onChangeText={setNome} />
             <TextInput style={styles.input} placeholder="Valor" keyboardType="numeric" value={valor} onChangeText={setValor} />
@@ -264,7 +309,10 @@ const styles = StyleSheet.create({
     paddingVertical: 2, borderRadius: 4, overflow: 'hidden',
   },
   cardDate: { fontSize: 11, color: '#94a3b8', marginTop: 4 },
-  statusCol: { alignItems: 'center', marginLeft: 8 },
+  statusCol: { alignItems: 'center', marginLeft: 8, justifyContent: 'center' },
+  actionsRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
+  actionBtnRow: { padding: 4 },
+  actionTextRow: { fontSize: 16 },
   statusText: { fontSize: 11, fontWeight: '600', marginBottom: 4 },
   emptyText: { textAlign: 'center', color: '#94a3b8', marginTop: 40, fontSize: 14 },
 

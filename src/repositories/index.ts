@@ -19,6 +19,13 @@ export const ReceitasRepo = {
   delete: async (id: string) => {
     const db = await getDb();
     await db.runAsync('DELETE FROM receitas WHERE id = ?', [id]);
+  },
+  update: async (receita: Receita) => {
+    const db = await getDb();
+    await db.runAsync(
+      'UPDATE receitas SET descricao = ?, valor = ?, tipo = ?, data_recebimento = ?, mes_referencia = ? WHERE id = ?',
+      [receita.descricao, receita.valor, receita.tipo, receita.data_recebimento, receita.mes_referencia, receita.id]
+    );
   }
 };
 
@@ -41,6 +48,13 @@ export const DespesasRepo = {
   delete: async (id: string) => {
     const db = await getDb();
     await db.runAsync('DELETE FROM despesas WHERE id = ?', [id]);
+  },
+  update: async (despesa: Despesa) => {
+    const db = await getDb();
+    await db.runAsync(
+      'UPDATE despesas SET nome = ?, valor = ?, categoria = ?, forma_pagamento = ?, cartao_id = ?, pago = ?, data_vencimento = ?, mes_referencia = ? WHERE id = ?',
+      [despesa.nome, despesa.valor, despesa.categoria, despesa.forma_pagamento, despesa.cartao_id ?? null, despesa.pago ? 1 : 0, despesa.data_vencimento, despesa.mes_referencia, despesa.id]
+    );
   }
 };
 
@@ -55,6 +69,17 @@ export const CartoesRepo = {
       'INSERT INTO cartoes (id, nome, limite) VALUES (?, ?, ?)',
       [cartao.id, cartao.nome, cartao.limite]
     );
+  },
+  update: async (cartao: Cartao) => {
+    const db = await getDb();
+    await db.runAsync(
+      'UPDATE cartoes SET nome = ?, limite = ? WHERE id = ?',
+      [cartao.nome, cartao.limite, cartao.id]
+    );
+  },
+  delete: async (id: string) => {
+    const db = await getDb();
+    await db.runAsync('DELETE FROM cartoes WHERE id = ?', [id]);
   }
 };
 
