@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Switch, Modal } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Switch, Modal, ScrollView } from 'react-native';
 import { useAppStore } from '../store';
 import { generateId } from '../utils/uuid';
 import { Despesa, CategoriaDespesa, FormaPagamento } from '../models/types';
-import { formatarMoeda } from '../services/financas';
+import { formatarMoeda, getFaturasCartoes, FaturaCartao } from '../services/financas';
 
 const CATEGORIAS: { label: string; value: CategoriaDespesa }[] = [
   { label: 'Fixo', value: 'fixo' },
@@ -45,8 +45,59 @@ export default function DespesasScreen() {
     resetForm();
   };
 
+  const faturas = getFaturasCartoes(despesas, cartoes);
+  const despesasDiretas = despesas.filter(d => d.forma_pagamento !== 'cartao' || !d.cartao_id);
+  const [faturaExpandida, setFaturaExpandida] = useState<string | null>(null);
+
+  const toggleFatura = (cartaoId: string) => {
+    setFaturaExpandida(prev => prev === cartaoId ? null : cartaoId);
+  };
+
+  const renderFaturaCard = (fatura: FaturaCartao) => {
+    const isExpanded = faturaExpandida === fatura.cartao.id;
+    const pagas = fatura.despesas.filter(d => d.pago).length;
+    const total = fatura.despesas.length;
+
+    return (
+      <TouchableOpacity
+        key={fatura.cartao.id}
+        style={styles.faturaCard}
+        onPress={() => toggleFatura(fatura.cartao.id)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.faturaHeader}>
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ fontSize: 20, marginRight: 8 }}>💳</Text>
+              <Text style={styles.faturaNome}>Fatura {fatura.cartao.nome}</Text>
+            </View>
+            <Text style={styles.faturaInfo}>
+              {total} {total === 1 ? 'despesa' : 'despesas'} · {pagas} {pagas === 1 ? 'paga' : 'pagas'}
+            </Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.faturaTotal}>{formatarMoeda(fatura.total)}</Text>
+            <Text style={styles.faturaExpandIcon}>{isExpanded ? '▲' : '▼'}</Text>
+          </View>
+        </View>
+
+        {isExpanded && (
+          <View style={styles.faturaDetalhe}>
+            {fatura.despesas.map(d => (
+              <View key={d.id} style={styles.faturaItem}>
+                <Text style={styles.faturaItemNome}>{d.nome}</Text>
+                <Text style={[styles.faturaItemValor, d.pago && { color: '#22c55e' }]}>
+                  {formatarMoeda(d.valor)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
   const renderItem = ({ item }: { item: Despesa }) => {
-    const cartao = item.cartao_id ? cartoes.find(c => c.id === item.cartao_id) : null;
     return (
       <View style={[styles.card, item.pago && styles.cardPago]}>
         <View style={{ flex: 1 }}>
@@ -54,7 +105,6 @@ export default function DespesasScreen() {
           <Text style={styles.cardValor}>{formatarMoeda(item.valor)}</Text>
           <View style={styles.tagsRow}>
             <Text style={styles.tag}>{item.categoria}</Text>
-            {cartao && <Text style={[styles.tag, styles.tagCartao]}>💳 {cartao.nome}</Text>}
           </View>
           <Text style={styles.cardDate}>Vence: {item.data_vencimento}</Text>
         </View>
@@ -72,6 +122,23 @@ export default function DespesasScreen() {
       </View>
     );
   };
+
+  const ListHeader = () => (
+    <>
+      {/* Fatura cards - non-editable */}
+      {faturas.length > 0 && (
+        <View style={styles.faturasSection}>
+          <Text style={styles.faturasTitle}>Faturas de Cartão</Text>
+          {faturas.map(renderFaturaCard)}
+        </View>
+      )}
+
+      {/* Section title for direct expenses */}
+      {despesasDiretas.length > 0 && faturas.length > 0 && (
+        <Text style={styles.despesasDiretasTitle}>Despesas Diretas</Text>
+      )}
+    </>
+  );
 
   return (
     <View style={styles.container}>
@@ -159,12 +226,17 @@ export default function DespesasScreen() {
         </View>
       </Modal>
 
-      {/* List */}
+      {/* List - only direct expenses (card expenses shown in fatura cards above) */}
       <FlatList
-        data={despesas}
+        data={despesasDiretas}
         keyExtractor={item => item.id}
         renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma despesa cadastrada para este mês.</Text>}
+        ListHeaderComponent={ListHeader}
+        ListEmptyComponent={
+          faturas.length === 0
+            ? <Text style={styles.emptyText}>Nenhuma despesa cadastrada para este mês.</Text>
+            : null
+        }
         contentContainerStyle={{ paddingBottom: 24 }}
       />
     </View>
@@ -191,11 +263,34 @@ const styles = StyleSheet.create({
     fontSize: 10, backgroundColor: '#e2e8f0', color: '#475569', paddingHorizontal: 6,
     paddingVertical: 2, borderRadius: 4, overflow: 'hidden',
   },
-  tagCartao: { backgroundColor: '#dbeafe', color: '#2563eb' },
   cardDate: { fontSize: 11, color: '#94a3b8', marginTop: 4 },
   statusCol: { alignItems: 'center', marginLeft: 8 },
   statusText: { fontSize: 11, fontWeight: '600', marginBottom: 4 },
   emptyText: { textAlign: 'center', color: '#94a3b8', marginTop: 40, fontSize: 14 },
+
+  // Fatura cards
+  faturasSection: { marginBottom: 16 },
+  faturasTitle: { fontSize: 16, fontWeight: 'bold', color: '#7c3aed', marginBottom: 10 },
+  despesasDiretasTitle: { fontSize: 16, fontWeight: 'bold', color: '#1e293b', marginBottom: 10, marginTop: 4 },
+  faturaCard: {
+    backgroundColor: '#faf5ff', borderRadius: 14, marginBottom: 10,
+    padding: 16, elevation: 2, borderLeftWidth: 4, borderLeftColor: '#7c3aed',
+  },
+  faturaHeader: { flexDirection: 'row', alignItems: 'center' },
+  faturaNome: { fontSize: 16, fontWeight: 'bold', color: '#5b21b6' },
+  faturaInfo: { fontSize: 12, color: '#8b5cf6', marginTop: 2 },
+  faturaTotal: { fontSize: 18, fontWeight: 'bold', color: '#7c3aed' },
+  faturaExpandIcon: { fontSize: 10, color: '#a78bfa', marginTop: 2 },
+  faturaDetalhe: {
+    marginTop: 12, paddingTop: 10,
+    borderTopWidth: 1, borderTopColor: '#e9d5ff',
+  },
+  faturaItem: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    paddingVertical: 6, paddingHorizontal: 4,
+  },
+  faturaItemNome: { fontSize: 13, color: '#1e293b' },
+  faturaItemValor: { fontSize: 13, fontWeight: '600', color: '#7c3aed' },
 
   // Modal
   modalOverlay: {

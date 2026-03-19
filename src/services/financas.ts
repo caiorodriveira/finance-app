@@ -1,4 +1,27 @@
-import { Despesa, Receita } from '../models/types';
+import { Despesa, Receita, Cartao } from '../models/types';
+
+/**
+ * Representa um item pendente no dashboard:
+ * - tipo 'despesa': uma despesa individual (pagamento direto)
+ * - tipo 'fatura': agrupamento de despesas de um cartão
+ */
+export interface PendenteItem {
+  tipo: 'despesa' | 'fatura';
+  id: string;
+  nome: string;
+  valor: number;
+  data_vencimento?: string;
+  despesas?: Despesa[]; // despesas que compõem a fatura
+}
+
+/**
+ * Representa o resumo de fatura de um cartão
+ */
+export interface FaturaCartao {
+  cartao: Cartao;
+  despesas: Despesa[];
+  total: number;
+}
 
 /**
  * Calcula o total de receitas do mês
@@ -82,4 +105,66 @@ export function getNomeMes(mesReferencia: string): string {
   ];
   const [year, month] = mesReferencia.split('-').map(Number);
   return `${meses[month - 1]} ${year}`;
+}
+
+/**
+ * Agrupa despesas pendentes para exibição:
+ * - Despesas com pagamento direto aparecem individualmente
+ * - Despesas de cartão são agrupadas como "Fatura (nome do cartão)"
+ */
+export function agruparPendentes(despesas: Despesa[], cartoes: Cartao[]): PendenteItem[] {
+  const pendentes = despesas.filter(d => !d.pago);
+  const items: PendenteItem[] = [];
+
+  // Despesas com pagamento direto (sem cartão)
+  const diretas = pendentes.filter(d => d.forma_pagamento !== 'cartao' || !d.cartao_id);
+  for (const d of diretas) {
+    items.push({
+      tipo: 'despesa',
+      id: d.id,
+      nome: d.nome,
+      valor: d.valor,
+      data_vencimento: d.data_vencimento,
+    });
+  }
+
+  // Agrupar despesas de cartão por cartão_id
+  const despesasCartao = pendentes.filter(d => d.forma_pagamento === 'cartao' && d.cartao_id);
+  const porCartao = new Map<string, Despesa[]>();
+  for (const d of despesasCartao) {
+    const list = porCartao.get(d.cartao_id!) || [];
+    list.push(d);
+    porCartao.set(d.cartao_id!, list);
+  }
+
+  for (const [cartaoId, deps] of porCartao) {
+    const cartao = cartoes.find(c => c.id === cartaoId);
+    const nomeCartao = cartao ? cartao.nome : 'Cartão';
+    const total = deps.reduce((acc, d) => acc + d.valor, 0);
+    items.push({
+      tipo: 'fatura',
+      id: `fatura-${cartaoId}`,
+      nome: `Fatura ${nomeCartao}`,
+      valor: total,
+      despesas: deps,
+    });
+  }
+
+  return items;
+}
+
+/**
+ * Retorna resumo de fatura por cartão (todas as despesas, não apenas pendentes)
+ */
+export function getFaturasCartoes(despesas: Despesa[], cartoes: Cartao[]): FaturaCartao[] {
+  return cartoes
+    .map(cartao => {
+      const deps = despesas.filter(d => d.cartao_id === cartao.id);
+      return {
+        cartao,
+        despesas: deps,
+        total: deps.reduce((acc, d) => acc + d.valor, 0),
+      };
+    })
+    .filter(f => f.despesas.length > 0);
 }

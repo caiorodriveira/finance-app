@@ -12,13 +12,13 @@ import {
   calcularValorPago,
   calcularValorAPagar,
   calcularProgressoPagamento,
-  getDespesasPendentes,
+  agruparPendentes,
   formatarMoeda,
   getNomeMes,
 } from '../services/financas';
 
 export default function DashboardScreen() {
-  const { receitas, despesas, currentMonth, setCurrentMonth } = useAppStore();
+  const { receitas, despesas, cartoes, currentMonth, setCurrentMonth } = useAppStore();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
 
@@ -28,7 +28,7 @@ export default function DashboardScreen() {
   const valorPago = calcularValorPago(despesas);
   const valorAPagar = calcularValorAPagar(despesas);
   const progress = calcularProgressoPagamento(despesas);
-  const pendentes = getDespesasPendentes(despesas);
+  const pendentesAgrupados = agruparPendentes(despesas, cartoes);
 
   const handlePrevMonth = () => {
     const [year, month] = currentMonth.split('-').map(Number);
@@ -102,17 +102,40 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Despesas Pendentes */}
-      {pendentes.length > 0 && (
+      {/* Despesas Pendentes (agrupadas por cartão) */}
+      {pendentesAgrupados.length > 0 && (
         <>
-          <Text style={styles.sectionTitle}>Despesas Pendentes</Text>
-          {pendentes.map(d => (
-            <View key={d.id} style={styles.pendenteCard}>
+          <Text style={styles.sectionTitle}>Pendências do Mês</Text>
+          {pendentesAgrupados.map(item => (
+            <View
+              key={item.id}
+              style={[
+                styles.pendenteCard,
+                item.tipo === 'fatura' && styles.pendenteCardFatura,
+              ]}
+            >
               <View style={{ flex: 1 }}>
-                <Text style={styles.pendenteNome}>{d.nome}</Text>
-                <Text style={styles.pendenteVence}>Vence: {d.data_vencimento}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 16, marginRight: 6 }}>
+                    {item.tipo === 'fatura' ? '💳' : '📄'}
+                  </Text>
+                  <Text style={styles.pendenteNome}>{item.nome}</Text>
+                </View>
+                {item.tipo === 'despesa' && item.data_vencimento && (
+                  <Text style={styles.pendenteVence}>Vence: {item.data_vencimento}</Text>
+                )}
+                {item.tipo === 'fatura' && item.despesas && (
+                  <Text style={styles.pendenteVence}>
+                    {item.despesas.length} {item.despesas.length === 1 ? 'despesa' : 'despesas'} vinculadas
+                  </Text>
+                )}
               </View>
-              <Text style={styles.pendenteValor}>{formatarMoeda(d.valor)}</Text>
+              <Text style={[
+                styles.pendenteValor,
+                item.tipo === 'fatura' && { color: '#7c3aed' },
+              ]}>
+                {formatarMoeda(item.valor)}
+              </Text>
             </View>
           ))}
         </>
@@ -155,6 +178,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff', padding: 14, borderRadius: 10, marginBottom: 8,
     flexDirection: 'row', alignItems: 'center', elevation: 1,
     borderLeftWidth: 4, borderLeftColor: '#f59e0b',
+  },
+  pendenteCardFatura: {
+    borderLeftColor: '#7c3aed', backgroundColor: '#faf5ff',
   },
   pendenteNome: { fontSize: 15, fontWeight: '600', color: '#1e293b' },
   pendenteVence: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
