@@ -22,20 +22,18 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     padding: 18,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 24,
     ...shadow,
   },
   title: {
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textMuted,
-    marginBottom: 8,
+    marginBottom: 10,
     fontWeight: '600',
     letterSpacing: 0.2,
   },
   value: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '800',
   },
 });

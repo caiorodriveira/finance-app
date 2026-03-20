@@ -26,14 +26,14 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textMuted,
-    marginBottom: 8,
+    marginBottom: 10,
     fontWeight: '600',
   },
   barBackground: {
-    height: 10,
-    backgroundColor: colors.surfaceSoft,
+    height: 8,
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 999,
     overflow: 'hidden',
   },

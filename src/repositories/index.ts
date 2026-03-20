@@ -45,6 +45,13 @@ export const DespesasRepo = {
     const db = await getDb();
     await db.runAsync('UPDATE despesas SET pago = ? WHERE id = ?', [pago ? 1 : 0, id]);
   },
+  togglePagoByCartao: async (cartaoId: string, mesReferencia: string, pago: boolean) => {
+    const db = await getDb();
+    await db.runAsync(
+      'UPDATE despesas SET pago = ? WHERE cartao_id = ? AND mes_referencia = ?',
+      [pago ? 1 : 0, cartaoId, mesReferencia]
+    );
+  },
   delete: async (id: string) => {
     const db = await getDb();
     await db.runAsync('DELETE FROM despesas WHERE id = ?', [id]);

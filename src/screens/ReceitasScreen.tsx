@@ -70,91 +70,92 @@ export default function ReceitasScreen() {
 
   const totalReceitas = receitas.reduce((acc, item) => acc + item.valor, 0);
 
-  const renderItem = ({ item }: { item: Receita }) => (
-    <View style={styles.card}>
-      <View style={styles.cardMain}>
-        <Text style={styles.cardTitle}>{item.descricao}</Text>
-        <Text style={styles.cardValue}>{formatarMoeda(item.valor)}</Text>
-        <Text style={styles.cardMeta}>Recebimento {item.data_recebimento}</Text>
-      </View>
-      <View style={styles.cardActions}>
-        <TouchableOpacity style={styles.iconButton} onPress={() => handleEdit(item)}>
-          <Text style={styles.iconButtonText}>Editar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.iconButton, styles.iconButtonDanger]} onPress={() => handleDelete(item.id)}>
-          <Text style={[styles.iconButtonText, styles.iconButtonDangerText]}>Excluir</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
   return (
     <AppShell title="Receitas">
       <View style={styles.container}>
-      <View style={styles.heroCard}>
-        <Text style={styles.heroOverline}>Entradas</Text>
-        <Text style={styles.heroValue}>{formatarMoeda(totalReceitas)}</Text>
-        <Text style={styles.heroHint}>Total previsto para {currentMonth}</Text>
-      </View>
+        <View style={styles.heroCard}>
+          <Text style={styles.heroOverline}>Receitas</Text>
+          <Text style={styles.heroValue}>{formatarMoeda(totalReceitas)}</Text>
+          <Text style={styles.heroHint}>Total previsto para {currentMonth}</Text>
+        </View>
 
-      <TouchableOpacity style={styles.addButton} onPress={() => setShowForm(true)}>
-        <Text style={styles.addButtonText}>Adicionar receita</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.addButton} onPress={() => setShowForm(true)}>
+          <Text style={styles.addButtonText}>Adicionar receita</Text>
+        </TouchableOpacity>
 
-      <Modal visible={showForm} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <View style={styles.sheetHandle} />
-            <Text style={styles.modalTitle}>{editingItem ? 'Editar receita' : 'Nova receita'}</Text>
+        <Modal visible={showForm} animationType="slide" transparent>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalSheet}>
+              <View style={styles.sheetHandle} />
+              <Text style={styles.modalTitle}>{editingItem ? 'Editar receita' : 'Nova receita'}</Text>
 
-            <Text style={styles.inputLabel}>Descricao</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ex: salario, freela, bonus"
-              placeholderTextColor={colors.textSoft}
-              value={descricao}
-              onChangeText={setDescricao}
-            />
+              <Text style={styles.inputLabel}>Descricao</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ex: salario, freela, bonus"
+                placeholderTextColor={colors.textSoft}
+                value={descricao}
+                onChangeText={setDescricao}
+              />
 
-            <Text style={styles.inputLabel}>Valor</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="0,00"
-              placeholderTextColor={colors.textSoft}
-              keyboardType="numeric"
-              value={valor}
-              onChangeText={setValor}
-            />
+              <Text style={styles.inputLabel}>Valor</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="0,00"
+                placeholderTextColor={colors.textSoft}
+                keyboardType="numeric"
+                value={valor}
+                onChangeText={setValor}
+              />
 
-            <Text style={styles.inputLabel}>Data de recebimento</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="DD/MM"
-              placeholderTextColor={colors.textSoft}
-              value={dataRecebimento}
-              onChangeText={setDataRecebimento}
-            />
+              <Text style={styles.inputLabel}>Data de recebimento</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="DD/MM"
+                placeholderTextColor={colors.textSoft}
+                value={dataRecebimento}
+                onChangeText={setDataRecebimento}
+              />
 
-            <View style={styles.formActions}>
-              <TouchableOpacity style={styles.primaryButton} onPress={handleAdd}>
-                <Text style={styles.primaryButtonText}>Salvar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.secondaryButton} onPress={resetForm}>
-                <Text style={styles.secondaryButtonText}>Cancelar</Text>
-              </TouchableOpacity>
+              <View style={styles.formActions}>
+                <TouchableOpacity style={styles.primaryButton} onPress={handleAdd}>
+                  <Text style={styles.primaryButtonText}>Salvar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.secondaryButton} onPress={resetForm}>
+                  <Text style={styles.secondaryButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
 
-      <FlatList
-        data={receitas}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma receita cadastrada neste mes.</Text>}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
+        <FlatList
+          data={receitas}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma receita cadastrada neste mes.</Text>}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <View style={styles.cardMain}>
+                <Text style={styles.cardTitle}>{item.descricao}</Text>
+                <Text style={styles.cardValue}>{formatarMoeda(item.valor)}</Text>
+                <Text style={styles.cardMeta}>Recebimento {item.data_recebimento}</Text>
+              </View>
+              <View style={styles.cardActions}>
+                <TouchableOpacity style={styles.iconButton} onPress={() => handleEdit(item)}>
+                  <Text style={styles.iconButtonText}>Editar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.iconButton, styles.iconButtonDanger]}
+                  onPress={() => handleDelete(item.id)}
+                >
+                  <Text style={[styles.iconButtonText, styles.iconButtonDangerText]}>Excluir</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        />
       </View>
     </AppShell>
   );
@@ -164,20 +165,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    padding: 18,
+    paddingHorizontal: 14,
   },
   heroCard: {
     backgroundColor: colors.surface,
-    borderRadius: 28,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 24,
+    padding: 18,
     marginBottom: 14,
     ...shadow,
   },
   heroOverline: {
     color: colors.income,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -185,20 +184,20 @@ const styles = StyleSheet.create({
   },
   heroValue: {
     color: colors.text,
-    fontSize: 30,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '900',
     marginBottom: 8,
   },
   heroHint: {
     color: colors.textMuted,
-    fontSize: 13,
+    fontSize: 12,
   },
   addButton: {
     backgroundColor: colors.income,
     borderRadius: 18,
     paddingVertical: 16,
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   addButtonText: {
     color: '#052114',
@@ -210,24 +209,22 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 12,
   },
   cardMain: {
-    marginBottom: 14,
+    marginBottom: 12,
   },
   cardTitle: {
     color: colors.text,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 6,
   },
   cardValue: {
     color: colors.income,
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: '800',
     marginBottom: 6,
   },
@@ -242,12 +239,12 @@ const styles = StyleSheet.create({
   iconButton: {
     flex: 1,
     backgroundColor: colors.backgroundAlt,
-    borderRadius: 16,
-    paddingVertical: 12,
+    borderRadius: 15,
+    paddingVertical: 11,
     alignItems: 'center',
   },
   iconButtonDanger: {
-    backgroundColor: colors.expenseSoft,
+    backgroundColor: 'rgba(255, 180, 171, 0.12)',
   },
   iconButtonText: {
     color: colors.text,
@@ -255,7 +252,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   iconButtonDangerText: {
-    color: '#ffc9d2',
+    color: colors.expense,
   },
   emptyText: {
     color: colors.textSoft,
@@ -269,12 +266,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.overlay,
   },
   modalSheet: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceSoft,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     padding: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   sheetHandle: {
     width: 48,
@@ -299,8 +294,6 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: colors.backgroundAlt,
     borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: 16,
     paddingVertical: 14,
     color: colors.text,

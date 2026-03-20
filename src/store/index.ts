@@ -12,6 +12,7 @@ interface AppState {
   loadData: () => Promise<void>;
   addDespesa: (despesa: Despesa) => Promise<void>;
   toggleDespesaPago: (id: string, pago: boolean) => Promise<void>;
+  toggleFaturaCartaoPago: (cartaoId: string, pago: boolean) => Promise<void>;
   addReceita: (receita: Receita) => Promise<void>;
   updateReceita: (receita: Receita) => Promise<void>;
   deleteReceita: (id: string) => Promise<void>;
@@ -70,6 +71,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   toggleDespesaPago: async (id: string, pago: boolean) => {
     await DespesasRepo.togglePago(id, pago);
+    await get().loadData();
+  },
+
+  toggleFaturaCartaoPago: async (cartaoId: string, pago: boolean) => {
+    const { currentMonth } = get();
+    await DespesasRepo.togglePagoByCartao(cartaoId, currentMonth, pago);
     await get().loadData();
   },
 

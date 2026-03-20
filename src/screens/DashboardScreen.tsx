@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { MaterialCommunityIcons } from 'expo/node_modules/@expo/vector-icons';
 import SummaryCard from '../components/SummaryCard';
 import ProgressBar from '../components/ProgressBar';
 import { useAppStore } from '../store';
@@ -33,7 +34,7 @@ export default function DashboardScreen() {
 
   const [showingSuccess, setShowingSuccess] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.92)).current;
+  const scaleAnim = useRef(new Animated.Value(0.94)).current;
 
   const totalReceitas = calcularTotalReceitas(receitas);
   const totalDespesas = calcularTotalDespesas(despesas);
@@ -58,15 +59,15 @@ export default function DashboardScreen() {
   const triggerSuccessAnimation = () => {
     setShowingSuccess(true);
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 260, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
       Animated.spring(scaleAnim, { toValue: 1, friction: 7, useNativeDriver: true }),
     ]).start(() => {
       setTimeout(() => {
-        Animated.timing(fadeAnim, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => {
+        Animated.timing(fadeAnim, { toValue: 0, duration: 180, useNativeDriver: true }).start(() => {
           setShowingSuccess(false);
-          scaleAnim.setValue(0.92);
+          scaleAnim.setValue(0.94);
         });
-      }, 1400);
+      }, 1200);
     });
   };
 
@@ -105,47 +106,25 @@ export default function DashboardScreen() {
     );
   };
 
-  const paidCount = despesas.filter(item => item.pago).length;
-
   return (
     <AppShell title="Dashboard">
-      <ScrollView
-        style={styles.screen}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.hero}>
-          <View style={styles.heroTopRow}>
-            <View>
-              <Text style={styles.overline}>Financeiro pessoal</Text>
-              <Text style={styles.heroTitle}>Check Contas</Text>
-            </View>
-            <View style={styles.monthPill}>
-              <Text style={styles.monthPillText}>{currentMonth}</Text>
-            </View>
-          </View>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.balanceSection}>
+          <Text style={styles.overline}>Saldo estimado</Text>
+          <Text style={[styles.balanceValue, { color: saldo >= 0 ? colors.text : colors.expense }]}>
+            {formatarMoeda(saldo)}
+          </Text>
 
           <View style={styles.monthSelector}>
-            <TouchableOpacity onPress={handlePrevMonth} style={styles.monthArrow}>
-              <Text style={styles.monthArrowText}>{'<'}</Text>
+            <TouchableOpacity onPress={handlePrevMonth} style={styles.monthAction}>
+              <Text style={styles.monthActionText}>{'<'}</Text>
             </TouchableOpacity>
             <View style={styles.monthCenter}>
-              <Text style={styles.monthLabel}>Mes ativo</Text>
               <Text style={styles.monthText}>{getNomeMes(currentMonth)}</Text>
             </View>
-            <TouchableOpacity onPress={handleNextMonth} style={styles.monthArrow}>
-              <Text style={styles.monthArrowText}>{'>'}</Text>
+            <TouchableOpacity onPress={handleNextMonth} style={styles.monthAction}>
+              <Text style={styles.monthActionText}>{'>'}</Text>
             </TouchableOpacity>
-          </View>
-
-          <View style={styles.balanceWrap}>
-            <Text style={styles.balanceLabel}>Saldo estimado</Text>
-            <Text style={[styles.balanceValue, { color: saldo >= 0 ? colors.income : colors.expense }]}>
-              {formatarMoeda(saldo)}
-            </Text>
-            <Text style={styles.balanceHint}>
-              {saldo >= 0 ? 'Voce fecha o mes com folga.' : 'As despesas estao acima das receitas.'}
-            </Text>
           </View>
         </View>
 
@@ -154,113 +133,118 @@ export default function DashboardScreen() {
             title="Receitas"
             value={formatarMoeda(totalReceitas)}
             color={colors.income}
-            style={styles.summaryCard}
+            style={styles.summaryCardIncome}
           />
           <SummaryCard
             title="Despesas"
             value={formatarMoeda(totalDespesas)}
             color={colors.expense}
-            style={styles.summaryCard}
+            style={styles.summaryCardExpense}
           />
         </View>
 
-        <View style={styles.progressCard}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Pagamento do mes</Text>
-            <Text style={styles.sectionMeta}>{paidCount}/{despesas.length || 0} quitadas</Text>
+        <View style={styles.card}>
+          <View style={styles.titleRow}>
+            <Text style={styles.sectionEyebrow}>Progresso</Text>
+            <Text style={styles.progressPercent}>{progress.toFixed(0)}%</Text>
           </View>
-          <ProgressBar
-            progress={progress}
-            label={`Progresso geral ${progress.toFixed(0)}%`}
-            color={progress >= 100 ? colors.income : colors.primary}
-          />
-          <View style={styles.progressStats}>
-            <View style={styles.progressStat}>
-              <Text style={styles.progressLabel}>Pago</Text>
-              <Text style={[styles.progressValue, { color: colors.income }]}>{formatarMoeda(valorPago)}</Text>
+          <ProgressBar progress={progress} color={colors.primary} />
+          <View style={styles.progressFoot}>
+            <View>
+              <Text style={styles.metaLabel}>Valor pago</Text>
+              <Text style={[styles.metaValue, { color: colors.income }]}>{formatarMoeda(valorPago)}</Text>
             </View>
-            <View style={styles.progressStat}>
-              <Text style={styles.progressLabel}>Em aberto</Text>
-              <Text style={[styles.progressValue, { color: colors.warning }]}>{formatarMoeda(valorAPagar)}</Text>
+            <View style={styles.alignEnd}>
+              <Text style={styles.metaLabel}>Em aberto</Text>
+              <Text style={styles.metaValue}>{formatarMoeda(valorAPagar)}</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.quickSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Atalhos</Text>
-            <Text style={styles.sectionMeta}>Fluxo rapido</Text>
-          </View>
-          <View style={styles.quickGrid}>
-            <TouchableOpacity style={styles.quickCard} onPress={() => navigation.navigate('Despesas')}>
-              <Text style={styles.quickTitle}>Despesas</Text>
-              <Text style={styles.quickDescription}>Cadastre, marque como pago e acompanhe vencimentos.</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickCard} onPress={() => navigation.navigate('Receitas')}>
-              <Text style={styles.quickTitle}>Receitas</Text>
-              <Text style={styles.quickDescription}>Veja entradas do mes e atualize os recebimentos.</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickCard} onPress={() => navigation.navigate('Cartoes')}>
-              <Text style={styles.quickTitle}>Cartoes</Text>
-              <Text style={styles.quickDescription}>Controle limites, uso atual e vencimento das faturas.</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Atalhos rapidos</Text>
         </View>
-
-        <View style={styles.managementCard}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Gestao do ciclo</Text>
-            <Text style={styles.sectionMeta}>Rotina mensal</Text>
-          </View>
-          <View style={styles.managementRow}>
-            <TouchableOpacity style={styles.primaryAction} onPress={handleReplicate}>
-              <Text style={styles.primaryActionText}>Replicar mês</Text>
-              <Text style={styles.primaryActionSubtext}>Leva os lancamentos para o proximo periodo.</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryAction} onPress={handleClear}>
-              <Text style={styles.secondaryActionText}>Limpar mês</Text>
-              <Text style={styles.secondaryActionSubtext}>Remove os dados atuais para recomecar.</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.quickGrid}>
+          <TouchableOpacity style={styles.quickButton} onPress={() => navigation.navigate('Despesas')}>
+            <View style={styles.quickIconCircle}>
+              <MaterialCommunityIcons name="file-document-plus-outline" size={18} color={colors.text} />
+            </View>
+            <Text style={styles.quickButtonTitle}>Minhas despesas</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickButton} onPress={() => navigation.navigate('Receitas')}>
+            <View style={styles.quickIconCircle}>
+              <MaterialCommunityIcons name="bank-outline" size={18} color={colors.text} />
+            </View>
+            <Text style={styles.quickButtonTitle}>Minhas receitas</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.quickButton, styles.quickButtonWide]} onPress={() => navigation.navigate('Cartoes')}>
+            <View style={styles.quickIconCircle}>
+              <MaterialCommunityIcons name="credit-card-check-outline" size={18} color={colors.text} />
+            </View>
+            <Text style={styles.quickButtonTitle}>Meus Cartoes</Text>
+          </TouchableOpacity>
         </View>
 
         {pendentesAgrupados.length > 0 && (
-          <View style={styles.pendingSection}>
+          <>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Pendencias</Text>
-              <Text style={styles.sectionMeta}>{pendentesAgrupados.length} itens</Text>
+              <Text style={styles.linkText}>Ver tudo</Text>
             </View>
-            {pendentesAgrupados.map(item => (
-              <View
-                key={item.id}
-                style={[
-                  styles.pendingCard,
-                  item.tipo === 'fatura' ? styles.pendingCardInvoice : styles.pendingCardExpense,
-                ]}
-              >
-                <View style={styles.pendingBadge}>
-                  <Text
-                    style={[
-                      styles.pendingBadgeText,
-                      { color: item.tipo === 'fatura' ? colors.accent : colors.warning },
-                    ]}
-                  >
-                    {item.tipo === 'fatura' ? 'FATURA' : 'CONTA'}
-                  </Text>
+            <View style={styles.pendingList}>
+              {pendentesAgrupados.map(item => (
+                <View key={item.id} style={styles.pendingItem}>
+                  <View style={styles.pendingDot}>
+                    <Text style={styles.pendingDotText}>{item.tipo === 'fatura' ? '■' : '•'}</Text>
+                  </View>
+                  <View style={styles.pendingMain}>
+                    <Text style={styles.pendingTitle}>{item.nome}</Text>
+                    <Text style={styles.pendingSubtitle}>
+                      {item.tipo === 'fatura' && item.despesas
+                        ? `${item.despesas.length} itens agrupados`
+                        : `Vence em ${item.data_vencimento || '-'}`}
+                    </Text>
+                  </View>
+                  <View style={styles.alignEnd}>
+                    <Text style={styles.pendingValue}>{formatarMoeda(item.valor)}</Text>
+                    <View
+                      style={[
+                        styles.statusPill,
+                        { backgroundColor: item.tipo === 'fatura' ? 'rgba(255, 180, 171, 0.12)' : 'rgba(255, 225, 109, 0.12)' },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusPillText,
+                          { color: item.tipo === 'fatura' ? colors.expense : colors.warning },
+                        ]}
+                      >
+                        {item.tipo === 'fatura' ? 'Atrasado' : 'Pendente'}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-                <View style={styles.pendingContent}>
-                  <Text style={styles.pendingTitle}>{item.nome}</Text>
-                  <Text style={styles.pendingSubtitle}>
-                    {item.tipo === 'fatura' && item.despesas
-                      ? `${item.despesas.length} despesas vinculadas`
-                      : `Vencimento ${item.data_vencimento || '-'}`}
-                  </Text>
-                </View>
-                <Text style={styles.pendingValue}>{formatarMoeda(item.valor)}</Text>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          </>
         )}
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Gestão do ciclo</Text>
+        </View>
+        <View style={styles.card}>
+          <Text style={styles.cardDescription}>
+            Gerencie a estrutura deste mes com base no historico ou inicie um novo planejamento.
+          </Text>
+          <TouchableOpacity style={styles.primaryCta} onPress={handleReplicate}>
+            <MaterialCommunityIcons name="content-copy" size={16} color="#032d33" />
+            <Text style={styles.primaryCtaText}>Copiar para o proximo mes</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.secondaryCta} onPress={handleClear}>
+            <MaterialCommunityIcons name="delete-outline" size={16} color={colors.textMuted} />
+            <Text style={styles.secondaryCtaText}>Limpar este mes</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.bottomSpace} />
       </ScrollView>
@@ -268,7 +252,7 @@ export default function DashboardScreen() {
       {showingSuccess && (
         <Animated.View style={[styles.successOverlay, { opacity: fadeAnim }]}>
           <Animated.View style={[styles.successBox, { transform: [{ scale: scaleAnim }] }]}>
-            <Text style={styles.successTitle}>Mês replicado</Text>
+            <Text style={styles.successTitle}>Mes replicado</Text>
             <Text style={styles.successText}>Os dados foram copiados para o proximo ciclo.</Text>
           </Animated.View>
         </Animated.View>
@@ -283,277 +267,254 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    paddingHorizontal: 18,
-    paddingBottom: 32,
+    paddingHorizontal: 14,
+    paddingBottom: 28,
   },
-  hero: {
-    backgroundColor: colors.surface,
-    borderRadius: 30,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadow,
-  },
-  heroTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 22,
+  balanceSection: {
+    paddingHorizontal: 8,
+    paddingTop: 8,
+    paddingBottom: 10,
   },
   overline: {
-    color: colors.accent,
-    fontSize: 12,
+    color: colors.textSoft,
+    fontSize: 11,
     fontWeight: '700',
-    textTransform: 'uppercase',
     letterSpacing: 1.1,
+    textTransform: 'uppercase',
     marginBottom: 8,
   },
-  heroTitle: {
-    color: colors.text,
-    fontSize: 30,
-    fontWeight: '800',
-  },
-  monthPill: {
-    backgroundColor: colors.backgroundAlt,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  monthPillText: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
+  balanceValue: {
+    fontSize: 28,
+    fontWeight: '900',
+    marginBottom: 14,
   },
   monthSelector: {
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: 999,
+    padding: 6,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.backgroundAlt,
-    borderRadius: 22,
-    padding: 10,
-    marginBottom: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
-  monthArrow: {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
-    backgroundColor: colors.surfaceElevated,
-    justifyContent: 'center',
+  monthAction: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  monthArrowText: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '700',
+  monthActionText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '800',
   },
   monthCenter: {
     flex: 1,
     alignItems: 'center',
   },
-  monthLabel: {
-    color: colors.textSoft,
-    fontSize: 12,
-    marginBottom: 4,
-  },
   monthText: {
     color: colors.text,
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '700',
-  },
-  balanceWrap: {
-    alignItems: 'flex-start',
-  },
-  balanceLabel: {
-    color: colors.textMuted,
-    fontSize: 13,
-    marginBottom: 8,
-  },
-  balanceValue: {
-    fontSize: 34,
-    fontWeight: '800',
-    marginBottom: 8,
-  },
-  balanceHint: {
-    color: colors.textSoft,
-    fontSize: 13,
-    lineHeight: 19,
   },
   summaryRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 18,
     gap: 12,
+    marginBottom: 16,
   },
-  summaryCard: {
+  summaryCardIncome: {
     flex: 1,
-  },
-  progressCard: {
     backgroundColor: colors.surface,
-    borderRadius: 28,
-    padding: 20,
-    marginTop: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
+  },
+  summaryCardExpense: {
+    flex: 1,
+    backgroundColor: colors.surface,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 16,
+    ...shadow,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  sectionEyebrow: {
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  progressPercent: {
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  progressFoot: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  metaLabel: {
+    color: colors.textSoft,
+    fontSize: 10,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  metaValue: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  alignEnd: {
+    alignItems: 'flex-end',
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    paddingHorizontal: 8,
+    marginBottom: 10,
+    marginTop: 10,
   },
   sectionTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  sectionMeta: {
     color: colors.textSoft,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  progressStats: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 16,
-  },
-  progressStat: {
-    flex: 1,
-    backgroundColor: colors.backgroundAlt,
-    borderRadius: 18,
-    padding: 14,
-  },
-  progressLabel: {
-    color: colors.textSoft,
-    fontSize: 12,
-    marginBottom: 6,
-  },
-  progressValue: {
-    fontSize: 16,
+    fontSize: 11,
     fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
-  quickSection: {
-    marginTop: 18,
+  linkText: {
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: '700',
   },
   quickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
+    marginBottom: 16,
   },
-  quickCard: {
+  quickButton: {
+    width: '48%',
     backgroundColor: colors.surface,
-    borderRadius: 24,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  quickTitle: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  quickDescription: {
-    color: colors.textMuted,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  managementCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 28,
-    padding: 20,
-    marginTop: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  managementRow: {
-    gap: 12,
-  },
-  primaryAction: {
-    backgroundColor: colors.primarySoft,
-    borderRadius: 22,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  primaryActionText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  primaryActionSubtext: {
-    color: colors.textMuted,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  secondaryAction: {
-    backgroundColor: colors.expenseSoft,
-    borderRadius: 22,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: '#613142',
-  },
-  secondaryActionText: {
-    color: '#ffdbe2',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  secondaryActionSubtext: {
-    color: '#f6b9c4',
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  pendingSection: {
-    marginTop: 18,
-  },
-  pendingCard: {
-    borderRadius: 22,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  pendingCardExpense: {
-    backgroundColor: colors.warningSoft,
-    borderColor: '#5a451d',
+  quickButtonWide: {
+    width: '100%',
   },
-  pendingCardInvoice: {
-    backgroundColor: colors.accentSoft,
-    borderColor: '#245763',
+  quickIconCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.surfaceSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  pendingBadge: {
-    minWidth: 60,
+  quickButtonTitle: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '700',
   },
-  pendingBadgeText: {
-    fontSize: 11,
+  cardDescription: {
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+  primaryCta: {
+    backgroundColor: colors.primary,
+    borderRadius: 999,
+    paddingVertical: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+  },
+  primaryCtaText: {
+    color: '#032d33',
+    fontSize: 14,
     fontWeight: '800',
-    letterSpacing: 0.8,
   },
-  pendingContent: {
+  secondaryCta: {
+    backgroundColor: colors.surfaceSoft,
+    borderRadius: 999,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  secondaryCtaText: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  pendingList: {
+    gap: 10,
+  },
+  pendingItem: {
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  pendingDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.surfaceSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pendingDotText: {
+    color: colors.expense,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  pendingMain: {
     flex: 1,
   },
   pendingTitle: {
     color: colors.text,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   pendingSubtitle: {
-    color: colors.textMuted,
-    fontSize: 12,
+    color: colors.textSoft,
+    fontSize: 11,
   },
   pendingValue: {
     color: colors.text,
-    fontSize: 15,
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  statusPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  statusPillText: {
+    fontSize: 10,
     fontWeight: '800',
   },
   bottomSpace: {
-    height: 18,
+    height: 24,
   },
   successOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -563,25 +524,23 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   successBox: {
-    backgroundColor: colors.surface,
-    borderRadius: 28,
-    padding: 28,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
     width: '100%',
-    maxWidth: 320,
+    maxWidth: 300,
+    backgroundColor: colors.surfaceSoft,
+    borderRadius: 26,
+    padding: 24,
   },
   successTitle: {
     color: colors.text,
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
-    marginBottom: 8,
     textAlign: 'center',
+    marginBottom: 8,
   },
   successText: {
     color: colors.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
     textAlign: 'center',
   },
 });

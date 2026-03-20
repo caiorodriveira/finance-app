@@ -73,129 +73,127 @@ export default function CartoesScreen() {
     ]);
   };
 
-  const renderItem = ({ item }: { item: Cartao }) => {
-    const totalGasto = calcularTotalCartao(despesas, item.id);
-    const percentUsed = item.limite > 0 ? (totalGasto / item.limite) * 100 : 0;
-    const available = item.limite - totalGasto;
-
-    return (
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View>
-            <Text style={styles.cardTitle}>{item.nome}</Text>
-            <Text style={styles.cardSubtitle}>Vencimento {item.data_vencimento || 'nao informado'}</Text>
-          </View>
-          <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.headerButton} onPress={() => handleEdit(item)}>
-              <Text style={styles.headerButtonText}>Editar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.headerButton, styles.headerButtonDanger]}
-              onPress={() => handleDelete(item.id, totalGasto > 0)}
-            >
-              <Text style={[styles.headerButtonText, styles.headerButtonDangerText]}>Excluir</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.metricsRow}>
-          <View style={styles.metric}>
-            <Text style={styles.metricLabel}>Limite</Text>
-            <Text style={styles.metricValue}>{formatarMoeda(item.limite)}</Text>
-          </View>
-          <View style={styles.metric}>
-            <Text style={styles.metricLabel}>Usado</Text>
-            <Text style={[styles.metricValue, { color: colors.expense }]}>{formatarMoeda(totalGasto)}</Text>
-          </View>
-          <View style={styles.metric}>
-            <Text style={styles.metricLabel}>Livre</Text>
-            <Text style={[styles.metricValue, { color: colors.income }]}>{formatarMoeda(available)}</Text>
-          </View>
-        </View>
-
-        <View style={styles.barTrack}>
-          <View
-            style={[
-              styles.barFill,
-              {
-                width: `${Math.min(percentUsed, 100)}%`,
-                backgroundColor: percentUsed >= 80 ? colors.expense : colors.primary,
-              },
-            ]}
-          />
-        </View>
-        <Text style={styles.barLabel}>{percentUsed.toFixed(0)}% do limite utilizado</Text>
-      </View>
-    );
-  };
-
   return (
     <AppShell title="Cartoes">
       <View style={styles.container}>
-      <View style={styles.heroCard}>
-        <Text style={styles.heroOverline}>Cartoes</Text>
-        <Text style={styles.heroTitle}>{cartoes.length}</Text>
-        <Text style={styles.heroHint}>cards cadastrados no ciclo atual</Text>
-      </View>
+        <View style={styles.heroCard}>
+          <Text style={styles.heroOverline}>Cartoes</Text>
+          <Text style={styles.heroValue}>{cartoes.length}</Text>
+          <Text style={styles.heroHint}>Cartões cadastrados no ciclo atual</Text>
+        </View>
 
-      <TouchableOpacity style={styles.addButton} onPress={() => setShowForm(true)}>
-        <Text style={styles.addButtonText}>Adicionar cartao</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.addButton} onPress={() => setShowForm(true)}>
+          <Text style={styles.addButtonText}>Adicionar cartao</Text>
+        </TouchableOpacity>
 
-      <Modal visible={showForm} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <View style={styles.sheetHandle} />
-            <Text style={styles.modalTitle}>{editingItem ? 'Editar cartao' : 'Novo cartao'}</Text>
+        <Modal visible={showForm} animationType="slide" transparent>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalSheet}>
+              <View style={styles.sheetHandle} />
+              <Text style={styles.modalTitle}>{editingItem ? 'Editar cartao' : 'Novo cartao'}</Text>
 
-            <Text style={styles.inputLabel}>Nome</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ex: Nubank, Inter, Itau"
-              placeholderTextColor={colors.textSoft}
-              value={nome}
-              onChangeText={setNome}
-            />
+              <Text style={styles.inputLabel}>Nome</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ex: Nubank, Inter, Itau"
+                placeholderTextColor={colors.textSoft}
+                value={nome}
+                onChangeText={setNome}
+              />
 
-            <Text style={styles.inputLabel}>Limite</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="0,00"
-              placeholderTextColor={colors.textSoft}
-              keyboardType="numeric"
-              value={limite}
-              onChangeText={setLimite}
-            />
+              <Text style={styles.inputLabel}>Limite</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="0,00"
+                placeholderTextColor={colors.textSoft}
+                keyboardType="numeric"
+                value={limite}
+                onChangeText={setLimite}
+              />
 
-            <Text style={styles.inputLabel}>Vencimento</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ex: dia 10"
-              placeholderTextColor={colors.textSoft}
-              value={dataVencimento}
-              onChangeText={setDataVencimento}
-            />
+              <Text style={styles.inputLabel}>Vencimento</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ex: dia 10"
+                placeholderTextColor={colors.textSoft}
+                value={dataVencimento}
+                onChangeText={setDataVencimento}
+              />
 
-            <View style={styles.formActions}>
-              <TouchableOpacity style={styles.primaryButton} onPress={handleAdd}>
-                <Text style={styles.primaryButtonText}>Salvar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.secondaryButton} onPress={resetForm}>
-                <Text style={styles.secondaryButtonText}>Cancelar</Text>
-              </TouchableOpacity>
+              <View style={styles.formActions}>
+                <TouchableOpacity style={styles.primaryButton} onPress={handleAdd}>
+                  <Text style={styles.primaryButtonText}>Salvar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.secondaryButton} onPress={resetForm}>
+                  <Text style={styles.secondaryButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
 
-      <FlatList
-        data={cartoes}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.emptyText}>Nenhum cartao cadastrado neste mes.</Text>}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
+        <FlatList
+          data={cartoes}
+          keyExtractor={item => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={<Text style={styles.emptyText}>Nenhum cartao cadastrado neste mes.</Text>}
+          renderItem={({ item }) => {
+            const totalGasto = calcularTotalCartao(despesas, item.id);
+            const percentUsed = item.limite > 0 ? (totalGasto / item.limite) * 100 : 0;
+            const available = item.limite - totalGasto;
+
+            return (
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.cardTitle}>{item.nome}</Text>
+                    <Text style={styles.cardSubtitle}>Vencimento {item.data_vencimento || 'nao informado'}</Text>
+                  </View>
+                  <View style={styles.headerActions}>
+                    <TouchableOpacity style={styles.headerButton} onPress={() => handleEdit(item)}>
+                      <Text style={styles.headerButtonText}>Editar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.headerButton, styles.headerButtonDanger]}
+                      onPress={() => handleDelete(item.id, totalGasto > 0)}
+                    >
+                      <Text style={[styles.headerButtonText, styles.headerButtonDangerText]}>Excluir</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.metricsRow}>
+                  <View style={styles.metric}>
+                    <Text style={styles.metricLabel}>Limite</Text>
+                    <Text style={styles.metricValue}>{formatarMoeda(item.limite)}</Text>
+                  </View>
+                  <View style={styles.metric}>
+                    <Text style={styles.metricLabel}>Usado</Text>
+                    <Text style={[styles.metricValue, { color: colors.expense }]}>{formatarMoeda(totalGasto)}</Text>
+                  </View>
+                  <View style={styles.metric}>
+                    <Text style={styles.metricLabel}>Livre</Text>
+                    <Text style={[styles.metricValue, { color: colors.income }]}>{formatarMoeda(available)}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.barTrack}>
+                  <View
+                    style={[
+                      styles.barFill,
+                      {
+                        width: `${Math.min(percentUsed, 100)}%`,
+                        backgroundColor: percentUsed >= 80 ? colors.expense : colors.primary,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.barLabel}>{percentUsed.toFixed(0)}% do limite utilizado</Text>
+              </View>
+            );
+          }}
+        />
       </View>
     </AppShell>
   );
@@ -205,41 +203,39 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    padding: 18,
+    paddingHorizontal: 14,
   },
   heroCard: {
     backgroundColor: colors.surface,
-    borderRadius: 28,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 24,
+    padding: 18,
     marginBottom: 14,
     ...shadow,
   },
   heroOverline: {
     color: colors.accent,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 8,
   },
-  heroTitle: {
+  heroValue: {
     color: colors.text,
-    fontSize: 30,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '900',
     marginBottom: 8,
   },
   heroHint: {
     color: colors.textMuted,
-    fontSize: 13,
+    fontSize: 12,
   },
   addButton: {
     backgroundColor: colors.primary,
     borderRadius: 18,
     paddingVertical: 16,
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   addButtonText: {
     color: '#041b2e',
@@ -251,22 +247,19 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 18,
+    borderRadius: 20,
+    padding: 16,
     marginBottom: 12,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
     gap: 12,
-    marginBottom: 18,
+    marginBottom: 14,
   },
   cardTitle: {
     color: colors.text,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     marginBottom: 6,
   },
@@ -284,7 +277,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   headerButtonDanger: {
-    backgroundColor: colors.expenseSoft,
+    backgroundColor: 'rgba(255, 180, 171, 0.12)',
   },
   headerButtonText: {
     color: colors.text,
@@ -292,31 +285,31 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   headerButtonDangerText: {
-    color: '#ffc9d2',
+    color: colors.expense,
   },
   metricsRow: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   metric: {
     flex: 1,
     backgroundColor: colors.backgroundAlt,
-    borderRadius: 18,
+    borderRadius: 16,
     padding: 12,
   },
   metricLabel: {
     color: colors.textSoft,
-    fontSize: 12,
+    fontSize: 11,
     marginBottom: 6,
   },
   metricValue: {
     color: colors.text,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
   barTrack: {
-    height: 10,
+    height: 8,
     backgroundColor: colors.backgroundAlt,
     borderRadius: 999,
     overflow: 'hidden',
@@ -328,7 +321,7 @@ const styles = StyleSheet.create({
   },
   barLabel: {
     color: colors.textMuted,
-    fontSize: 12,
+    fontSize: 11,
   },
   emptyText: {
     color: colors.textSoft,
@@ -342,12 +335,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.overlay,
   },
   modalSheet: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceSoft,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     padding: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   sheetHandle: {
     width: 48,
@@ -372,8 +363,6 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: colors.backgroundAlt,
     borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: 16,
     paddingVertical: 14,
     color: colors.text,
